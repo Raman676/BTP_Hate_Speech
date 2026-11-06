@@ -1,0 +1,26 @@
+====================================================================
+EXPERIMENT A - does CMI recover the designed code-mixing structure?
+====================================================================
+
+Roman-script rows analysed: 460
+
+                  n  cmi_mean  cmi_sd  cmi_median  switch_mean  tokens_mean
+functionality                                                             
+MF1            310      5.02    9.01        0.00         0.63         7.41
+MF6            150     39.84    7.83       41.67         1.77        12.20
+
+Matrix language distribution (row %):
+matrix_lang    Balanced  English  Hindi
+functionality                          
+MF1                 0.0      0.0  100.0
+MF6                56.0     16.7   27.3
+
+Prediction: CMI(MF6) > CMI(MF1)
+  MF1 (romanized Hindi only) mean CMI = 5.02  (n=310)
+  MF6 (English + Hindi)      mean CMI = 39.84  (n=150)
+  Mann-Whitney U = 547, z = -17.93, p = 0
+  rank-biserial effect size r = -0.976
+  RESULT: CONFIRMED
+
+  Single-threshold separation of MF1 vs MF6 using CMI alone:
+    best threshold CMI = 29.0, accuracy = 0.954

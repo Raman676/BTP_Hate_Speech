@@ -1,0 +1,27 @@
+Gold sentences: 20   gold tokens: 215
+Token accuracy: 0.972
+
+              precision    recall  f1-score   support
+
+          en      0.929     0.963     0.945        54
+          hi      0.985     0.970     0.977       134
+        univ      1.000     1.000     1.000        27
+
+    accuracy                          0.972       215
+   macro avg      0.971     0.978     0.974       215
+weighted avg      0.973     0.972     0.972       215
+
+Confusion (rows=gold, cols=pred): ['en', 'hi', 'univ']
+[[ 52   2   0]
+ [  4 130   0]
+ [  0   0  27]]
+
+Errors (6):
+  s02  lower              gold=en    pred=hi
+  s06  to                 gold=hi    pred=en
+  s07  Hindu              gold=hi    pred=en
+  s09  angrezon           gold=hi    pred=en
+  s12  lower              gold=en    pred=hi
+  s14  to                 gold=hi    pred=en
+
+Most-confused tokens: [('lower', 2), ('to', 2), ('Hindu', 1), ('angrezon', 1)]

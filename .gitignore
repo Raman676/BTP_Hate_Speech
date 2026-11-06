@@ -1,0 +1,7 @@
+config_local.py
+labels/
+data/comments*.csv
+out/*.joblib
+__pycache__/
+*.pyc
+.env
