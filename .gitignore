@@ -4,3 +4,4 @@ out/*.joblib
 __pycache__/
 *.pyc
 .env
+.DS_Store
