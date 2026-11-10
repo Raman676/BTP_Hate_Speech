@@ -80,15 +80,69 @@ NEVER_PROFANE = {
     'chota', 'choti', 'chote',                 # small
     'mast', 'manda',
     'kutta', 'kutte',   # literally "dog"; insult only when directed -> valence
+    # Observed collisions in the L0 corpus (Nov 2026 audit):
+    'jyada', 'zyada', 'jiyada', 'jada',        # "more"    vs jihadi (fuzzy)
+    'aaram', 'aram', 'araam', 'garam',         # "rest/hot" vs haraam
+    'shaadi', 'shadi', 'sadi', 'saadi',        # "wedding" vs sadi
+    'khali', 'kaali', 'kali', 'kala', 'kaala', # "empty"/"black" vs kali
+    'chhod', 'chod', 'chodo', 'chhodo', 'chhoda', 'choda', 'chhodna',
+    'chodna', 'chhodi', 'chodi', 'chhoddo',            # "leave" vs chod
+    'paate', 'pate',                                     # vs pathe
+}
+
+# Entries in the Hinglish Profanity List (Mathur et al. 2018) that are
+# ordinary vocabulary, not taboo words. The list was built for a classifier,
+# so it includes anything that CAN be used insultingly. IV-3 measures swear
+# frequency: a count of taboo lexis. Whether an ordinary word was used to
+# insult is a pragmatic fact that the human label captures, not a lexical one.
+#
+# Colour terms (kali/kala) are excluded on the same principle. They are the
+# core vocabulary of skin-tone body-shaming, so counting them as "swearing"
+# would make IV-3 partly a restatement of the DV.  kaalu (a slur-only
+# nickname) is kept.
+NOT_SWEAR = {
+    # severity 1-2: animals, food, objects, everyday nouns
+    'jaanvar', 'khota', 'jaat', 'bhains', 'chatani', 'chipkali', 'chipkili',
+    'pasine', 'bhoot', 'bhajiye', 'doob', 'khatmal', 'lassan', 'makkhi',
+    'haathi', 'gadha', 'unday', 'chaarpai', 'chup', 'danda', 'keera', 'keeda',
+    'safaid', 'poot', 'bimaar', 'dum', 'jungli', 'backar', 'kutta', 'kutte',
+    'kute', 'kutton',
+    # severity 3+: ordinary words with an offensive secondary sense
+    'joon', 'kaat', 'gandi', 'chatri', 'bambu', 'maarey', 'jamai', 'sadi',
+    'kali', 'laltern', 'behendi', 'padma', 'beej', 'meetha', 'ghussa',
+    'toota', 'banda', 'maka', 'gadde', 'bum', 'neech', 'nirodh',
+}
+
+# English profanity. The Mathur list is Hindi-only, so without this "fuck"
+# and "bitch" scored zero. Severities set by analogy with the list's scale.
+EN_PROFANE = {
+    'fuck': 8, 'fucking': 8, 'fucked': 8, 'fucker': 8, 'fuckin': 8,
+    'motherfucker': 10, 'wtf': 5, 'stfu': 5,
+    'shit': 5, 'bullshit': 4, 'bitch': 7, 'bitches': 7, 'bastard': 6,
+    'asshole': 7, 'dick': 7, 'pussy': 8, 'slut': 8, 'whore': 8, 'cunt': 9,
 }
 
 
 # Short forms and initialisms that the skeleton rule cannot reach, because
 # they are abbreviations rather than spelling variants.
 ALIASES = {
-    'bc': 'bhenchod', 'bkl': 'bhosadike', 'mc': 'madarchod',
-    'bsdk': 'bhosadike', 'mkc': 'madarchod', 'lnd': 'lund',
+    'bc': 'bhenchod', 'bkl': 'bhosda', 'mc': 'madarchod',
+    'bsdk': 'bhosda', 'mkc': 'madarchod', 'lnd': 'lund',
     'chu': 'chutiya', 'ch': None,          # too short / ambiguous: ignore
+    # vowel-dropped spellings that normalisation cannot reach
+    'chtiya': 'chutiya', 'chtiye': 'chutiya', 'ctiya': 'chutiya',
+    'chutya': 'chutiya', 'chutiye': 'chutiya', 'chutiyo': 'chutiya',
+    'mf': 'motherfucker',
+    'bhenchod': 'bahenchod', 'behenchod': 'bahenchod', 'benchod': 'bahenchod',
+    'bhencho': 'bahenchod', 'bhenchood': 'bahenchod', 'bhenchodd': 'bahenchod',
+    'behnchod': 'bahenchod', 'bahinchod': 'bahenchod', 'bhanchod': 'bahenchod',
+    'bhanchodd': 'bahenchod', 'bnchod': 'bahenchod',
+    'maderchod': 'madarchod', 'madharchod': 'madarchod',
+    'madarchod': 'madarchod', 'madarjat': 'madarchod', 'mdrchod': 'madarchod',
+    'bhosdike': 'bhosda', 'bhosdi': 'bhosda', 'bhosdiwale': 'bhosda',
+    'bhosadi': 'bhosda', 'bhosri': 'bhosda', 'bhosriwala': 'bhosda',
+    'gaandu': 'gaandu', 'gandu': 'gandu',
+    'randi': 'randi', 'raand': 'raand', 'harami': 'haraami',
 }
 
 # Second person / addressee markers. Profanity co-occurring with one of these
@@ -118,9 +172,15 @@ THREAT = {
 
 
 class ProfanityMeter:
-    def __init__(self, lexicon: dict):
-        """lexicon: {word: severity 1-10} from the Hinglish Profanity List."""
-        self.lex = {w.lower(): s for w, s in lexicon.items()}
+    def __init__(self, lexicon: dict, english: set = frozenset()):
+        """lexicon: {word: severity 1-10} from the Hinglish Profanity List.
+        english: English word list. English words are never spelling-folded
+        or fuzzy-matched: "cut" -> chut, "count" -> cunt, "both" -> bhoot
+        were the main false positives before this guard."""
+        self.english = english
+        self.lex = {w.lower(): s for w, s in lexicon.items()
+                    if w.lower() not in NOT_SWEAR}
+        self.lex.update(EN_PROFANE)
         # normalized form -> max severity among words sharing it
         self.norm = {}
         for w, s in self.lex.items():
@@ -135,18 +195,18 @@ class ProfanityMeter:
     def lookup(self, token: str):
         """Return severity 1-10, or 0 if not profane.
 
-        Three tiers: exact -> alias -> edit distance 1. Fuzzy matching is
-        restricted to normalized forms of length >= 5, because short forms
-        collide far too readily (every 3-letter string is within distance 1
-        of several others).
+        Tiers: exact -> alias -> normalized spelling. English words are only
+        ever matched exactly, never folded.
         """
         t = re.sub(r'[^a-z]', '', token.lower().strip())
         if not t:
             return 0
-        if t in NEVER_PROFANE:
+        if t in NEVER_PROFANE or t in NOT_SWEAR:
             return 0
         if t in self.lex:
             return self.lex[t]
+        if t in self.english:
+            return 0
         if t in ALIASES and ALIASES[t]:
             tgt = ALIASES[t].lower()
             if tgt in self.lex:
@@ -158,11 +218,9 @@ class ProfanityMeter:
             return 0
         if k in self.norm:
             return self.norm[k]
-        if len(k) >= 5:
-            for L in (len(k) - 1, len(k), len(k) + 1):
-                for cand, sev in self.by_len.get(L, ()):
-                    if edit_distance(k, cand, 1) <= 1:
-                        return sev
+        # Edit-distance-1 matching was removed after the Nov 2026 audit: on the
+        # L0 corpus it produced 7 false hits (dharam->haraam, patle->pathe,
+        # chopra->chodra, ...) for 1 true one (chtiya), which is now an alias.
         return 0
 
     # ------------------------------------------------------------ the IV
@@ -211,7 +269,10 @@ def load(path: Path = None) -> ProfanityMeter:
                     encoding='latin-1')
     lex = {str(w).strip(): int(l) for w, l in zip(d.w, d.lvl)
            if str(w).strip()}
-    return ProfanityMeter(lex)
+    en = set()
+    if (OUT / 'lex_en.json').exists():
+        en = {w.lower() for w in json.load(open(OUT / 'lex_en.json'))}
+    return ProfanityMeter(lex, en)
 
 
 if __name__ == '__main__':
